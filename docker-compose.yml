@@ -1,0 +1,22 @@
+nginx-proxy:
+    restart: always
+    image: ericbarch/nginx-proxy-rpi
+    ports:
+        - "80:80"
+        - "443:443"
+    volumes:
+        - /media/data/srv/docker/nginx-proxy/certs:/etc/nginx/certs:ro
+        - /etc/nginx/certs
+        - /etc/nginx/vhost.d
+        - /usr/share/nginx/html
+        - /var/run/docker.sock:/tmp/docker.sock:ro
+    container_name: nginx-proxy
+letsencrypt:
+    restart: always
+    build: .
+    volumes:
+        - /media/data/srv/docker/nginx-proxy/certs:/etc/nginx/certs:rw
+        - /var/run/docker.sock:/var/run/docker.sock
+    volumes_from:
+        - nginx-proxy
+    container_name: letsencrypt
