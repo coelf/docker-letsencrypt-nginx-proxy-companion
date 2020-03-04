@@ -1,4 +1,4 @@
-version: '3'
+version: '2'
 services:
   nginx-proxy:
     restart: always
@@ -8,7 +8,6 @@ services:
       - "443:443"
     volumes:
       - /media/data/srv/docker/nginx-proxy/certs:/etc/nginx/certs:ro
-      - /etc/nginx/certs
       - /etc/nginx/vhost.d
       - /usr/share/nginx/html
       - /var/run/docker.sock:/tmp/docker.sock:ro
@@ -19,10 +18,10 @@ services:
     volumes:
       - /media/data/srv/docker/nginx-proxy/certs:/etc/nginx/certs:rw
       - /var/run/docker.sock:/var/run/docker.sock
-    volumes_from: nginx-proxy
+    volumes_from:
+      - nginx-proxy
     container_name: letsencrypt
-network_mode: "host"
-# networks:
-#   default:
-    # external:
-    #   name: nginx-proxy-net
+networks:
+  default:
+    external:
+      name: nginx-proxy-net
