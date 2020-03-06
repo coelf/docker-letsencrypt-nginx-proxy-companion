@@ -1,3 +1,4 @@
+os: linux
 dist: trusty
 sudo: required
 
@@ -5,28 +6,44 @@ language: bash
 
 addons:
   hosts:
-    - www.example1.com
-    - example1.com
-    - example2.wtf
-    - boulder
+    - le1.wtf
+    - le2.wtf
+    - le3.wtf
 
 env:
   global:
     - IMAGE=jrcs/letsencrypt-nginx-proxy-companion
     - NGINX_CONTAINER_NAME=nginx-proxy
     - DOCKER_GEN_CONTAINER_NAME=nginx-proxy-gen
-    - LETSENCRYPT_CONTAINER_NAME=nginx-proxy-le
-  matrix:
-    - SETUP=2containers TEST_DOMAINS=www.example1.com
-    - SETUP=3containers TEST_DOMAINS=www.example1.com
-    - SETUP=2containers TEST_DOMAINS="www.example1.com,example1.com,example2.wtf"
-    - SETUP=3containers TEST_DOMAINS="www.example1.com,example1.com,example2.wtf"
+    - TEST_DOMAINS=le1.wtf,le2.wtf,le3.wtf
+    - DOCKER_COMPOSE_VERSION=1.24.0
+
+matrix:
+  include:
+    - env: SETUP=2containers
+    - env: SETUP=3containers
+    - os: linux
+      dist: xenial
+      sudo: required
+      env: SETUP=2containers
+    - os: linux
+      dist: xenial
+      sudo: required
+      env: SETUP=3containers
+    - os: linux
+      dist: bionic
+      sudo: required
+      env: SETUP=2containers
+    - os: linux
+      dist: bionic
+      sudo: required
+      env: SETUP=3containers
+  allow_failures:
+    - dist: bionic
+  fast_finish: true
 
 before_install:
-  - sudo rm /usr/local/bin/docker-compose
-  - curl -L https://github.com/docker/compose/releases/download/1.16.1/docker-compose-`uname -s`-`uname -m` > docker-compose.temp
-  - chmod +x docker-compose.temp
-  - sudo mv docker-compose.temp /usr/local/bin/docker-compose
+  - test/travis/update-docker-compose.sh
 
 install:
   - docker build -t "$IMAGE" .
@@ -37,12 +54,13 @@ install:
 
 before_script:
   - git clone https://github.com/docker-library/official-images.git official-images
-  - tests/setup-boulder.sh
-  - tests/setup-nginx-proxy.sh $SETUP
+  - test/setup/setup-boulder.sh
+  - test/setup/setup-nginx-proxy.sh
+  - docker pull nginx:alpine
 
 script:
   - official-images/test/run.sh "$IMAGE"
-  - tests/test.sh $SETUP
+  - test/run.sh "$IMAGE"
 
 after_failure:
-  - tests/after-failure.sh $SETUP
+  - test/travis/containers-logs.sh
